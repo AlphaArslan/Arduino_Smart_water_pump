@@ -1,0 +1,5 @@
+= Handling SIM800l module
+	+ https://exploreembedded.com/wiki/GSM_SIM800L_Sheild_with_Arduino
+
+= Handling water flow sensor 
+	+ http://www.arduinotutorialonline.com/2018/07/best-arduino-flow-rate-sensor-tutorial.html
