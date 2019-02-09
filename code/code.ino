@@ -16,6 +16,7 @@
 #define       FIX_PUMP_DELAY    600000      //10 minutes
 #define       LDR_THRESHOLD     0           //obtain from Tuning_Code
 #define       MOIS_THRESHOLD    0           //obtain from Tuning_Code
+#define       WTRFLOW_THRESHOLD 0           //obtain from Tuning_Code
 
 //pin coonection
 #define       LDR_ANALOG        A0          //LDR sensor module analog output
@@ -109,7 +110,13 @@ void stop_pump(){
 }
 
 bool is_water_flowing(){
-    
+    NbTopsFan = 0;                          //Set NbTops to 0 ready for calculations
+    sei();                                  //Enables interrupts
+    delay (1000);                           //Wait 1 second
+    cli();                                  //Disable interrupts
+    Calc = (NbTopsFan * 60 / 7.5);          //(Pulse frequency x 60) / 7.5Q, = flow rate in L/hour 
+    if(calc > WTRFLOW_THRESHOLD) return true;
+    return false;
 }
 
 void send_warning(){
