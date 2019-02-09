@@ -30,6 +30,7 @@ Sim800l       Sim800l;                      //an object for the GSM module
 char          text[]="Water is not flowing.. we have a problem";                 
 char          number[]="+201207903371";
 volatile int  NbTopsFan;                    //measuring the rising edges of the signal
+int           Calc;
 
 /************************** Functions ****************************/
 bool          is_night();                   //returns TRUE if it's night.. it uses LDR sensor..
@@ -41,7 +42,11 @@ void          send_warning();               //sends SMS warning
 void          rpm();                        //needed for water flow sensor interrupt 
 /**************************** Setup() ****************************/
 void setup(){
-    if(DEBUG){Serial.begin(9600); Serial.println("Debug Enabled");}
+    if(DEBUG){
+        Serial.begin(9600); 
+        Serial.println("[Debug]: Debug Enabled");
+        Serial.println("[Debug]: Setup...");
+    }
     
     Sim800l.begin();
 
@@ -49,35 +54,48 @@ void setup(){
 }
 /**************************** loop() *****************************/
 void loop(){
+    if(DEBUG) Serial.println("[Debug]: Setup Done");
+    
     //wait until it's not night
     //pump doesn't work during night
     while(is_night()){
+        if(DEBUG) Serial.println("[Debug]: It's night..");
         delay(DELAY_TIME);
     }
     
     //yaaaay.. it's light.. the day has come ^_^
+    if(DEBUG) Serial.println("[Debug]: It's day..");
+    
     //let's see if the land is thirsty 
     if(need_water()){
+        if(DEBUG) Serial.println("[Debug]: Soil needs water"); 
+        
         //it needs water.. lets turn on the pump
         start_pump();
         delay(PUMP_DELAY);
 
         //check if water made it through
         if(is_water_flowing()){
+            if(DEBUG) Serial.println("[Debug]: Water is flowing");
+            
             //keep it ON as long as it needs water and it still is day
             while(need_water() && !is_night() && is_water_flowing()){
                 delay(DELAY_TIME);
             }
+            if(DEBUG) Serial.println("[Debug]: Finished");
             stop_pump();
         }else{
+            if(DEBUG) Serial.println("[Debug]: Water is not flowing. There's a problem");
             stop_pump();
             //water is not flowing .. trouble!!
             send_warning();
-            while(digitalRead(IS_FIXED) == LOW){}       //wait until problem is fixed
-        }
-        
-            
+            Serial.println("[Info]: Press push buttom after you finish the problem");
+            while(digitalRead(IS_FIXED) == HIGH){}       //wait until problem is fixed
+        }        
+    }else{
+        if(DEBUG) Serial.println("[Debug]: Soil doesn't need water"); 
     }
+
 }
 
 
@@ -102,10 +120,12 @@ bool need_water(){
 }
 
 void start_pump(){
+    if(DEBUG) Serial.println("[Debug]: Turning Pump ON");
     digitalWrite(PUMP_CONTROL, HIGH);
 }
 
 void stop_pump(){
+    if(DEBUG) Serial.println("[Debug]: Turning Pump OFF");
     digitalWrite(PUMP_CONTROL, LOW);
 }
 
@@ -115,15 +135,16 @@ bool is_water_flowing(){
     delay (1000);                           //Wait 1 second
     cli();                                  //Disable interrupts
     Calc = (NbTopsFan * 60 / 7.5);          //(Pulse frequency x 60) / 7.5Q, = flow rate in L/hour 
-    if(calc > WTRFLOW_THRESHOLD) return true;
+    if(Calc > WTRFLOW_THRESHOLD) return true;
     return false;
 }
 
 void send_warning(){
+    if(DEBUG) Serial.println("[Debug]: Sending warning SMS...");
     if(Sim800l.sendSms(number,text)){
-        Serial.println("Error Sending message");
-    }esle{
-        Serial.println("Message sent..");
+        Serial.println("[Info]: Error Sending message");
+    }else{
+        Serial.println("[Info]: Message sent");
     }
     
 }
